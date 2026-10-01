@@ -922,6 +922,10 @@
       🎴 고스톱
     </div>
 
+    <button onclick="logoutGame()" style="background: #555d60;color:white;border:0;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">
+      나가기
+    </button>
+      
     <div class="game-status">
 
       <span class="status-dot"></span>
@@ -1336,6 +1340,11 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function logoutGame() {
+  localStorage.removeItem("gostopPlayerId");
+  localStorage.removeItem("gostopPlayerName");
+  location.reload();
+}
 
 /* ============================================================
    입장
