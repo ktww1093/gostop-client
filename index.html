@@ -1,0 +1,2708 @@
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+
+  <title>고스톱 4인 게임</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Noto Sans KR",
+        sans-serif;
+      background: #071b13;
+      color: #fff;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    /* =========================================================
+       로그인 / 입장 화면
+       ========================================================= */
+
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background:
+        radial-gradient(circle at top, #174d37 0%, #071b13 55%),
+        #071b13;
+    }
+
+    .login-card {
+      width: min(430px, 100%);
+      padding: 32px 25px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+      text-align: center;
+      backdrop-filter: blur(15px);
+    }
+
+    .login-card .logo {
+      font-size: 64px;
+      margin-bottom: 8px;
+    }
+
+    .login-card h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    .login-card p {
+      color: #b9c9c1;
+      margin: 0 0 25px;
+    }
+
+    .name-input {
+      width: 100%;
+      height: 52px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid #46675a;
+      background: rgba(0, 0, 0, 0.25);
+      color: white;
+      font-size: 17px;
+      outline: none;
+    }
+
+    .name-input:focus {
+      border-color: #5fd69b;
+    }
+
+    .primary-btn {
+      width: 100%;
+      height: 52px;
+      margin-top: 13px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #23a96f, #187d52);
+      color: white;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* =========================================================
+       게임 전체
+       =========================================================
+
+    #gameScreen {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .top-bar {
+      height: 62px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0b251b;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .game-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #b7c9c0;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #5bd99c;
+      box-shadow: 0 0 10px #5bd99c;
+    }
+
+    .round-badge {
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.08);
+      color: #d6e6df;
+    }
+
+    /* =========================================================
+       게임 테이블
+       ========================================================= */
+
+    .table-wrapper {
+      padding: 15px;
+    }
+
+    .game-table {
+      width: min(1200px, 100%);
+      min-height: 650px;
+      margin: auto;
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+
+      background:
+        radial-gradient(
+          ellipse at center,
+          #167047 0%,
+          #105c3a 45%,
+          #0b472e 100%
+        );
+
+      border: 10px solid #382417;
+      box-shadow:
+        inset 0 0 0 2px #68462e,
+        inset 0 0 60px rgba(0,0,0,0.35),
+        0 25px 60px rgba(0,0,0,0.45);
+    }
+
+    /* =========================================================
+       플레이어 영역
+       ========================================================= */
+
+    .player-seat {
+      position: absolute;
+      width: 225px;
+      min-height: 115px;
+      padding: 12px;
+      border-radius: 15px;
+
+      background: rgba(0, 0, 0, 0.32);
+      border: 1px solid rgba(255,255,255,0.12);
+
+      transition: 0.2s;
+      z-index: 5;
+    }
+
+    .player-seat.current-turn {
+      border-color: #ffd95a;
+      box-shadow:
+        0 0 0 2px rgba(255,217,90,0.25),
+        0 0 25px rgba(255,217,90,0.25);
+    }
+
+    .player-seat.dead {
+      opacity: 0.48;
+      filter: grayscale(0.8);
+    }
+
+    .player-seat.seller {
+      border-color: #ff9e5a;
+      box-shadow: 0 0 20px rgba(255,158,90,0.25);
+    }
+
+    .player-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .player-name {
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .turn-label {
+      display: none;
+      font-size: 11px;
+      color: #1e2d22;
+      background: #ffd95a;
+      padding: 3px 7px;
+      border-radius: 20px;
+      font-weight: 800;
+    }
+
+    .current-turn .turn-label {
+      display: inline-block;
+    }
+
+    .player-balance {
+      font-size: 19px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .positive {
+      color: #72e6aa;
+    }
+
+    .negative {
+      color: #ff8e8e;
+    }
+
+    .zero {
+      color: #d7e0dc;
+    }
+
+    .player-info {
+      display: flex;
+      justify-content: space-between;
+      color: #a9bdb4;
+      font-size: 12px;
+    }
+
+    .player-position-0 {
+      left: 50%;
+      top: 14px;
+      transform: translateX(-50%);
+    }
+
+    .player-position-1 {
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .player-position-2 {
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+    }
+
+    .player-position-3 {
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    /* =========================================================
+       중앙 게임 영역
+       ========================================================= */
+
+    .center-area {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(650px, 60%);
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .phase-label {
+      display: inline-block;
+      padding: 7px 14px;
+      border-radius: 30px;
+      background: rgba(0,0,0,0.3);
+      font-size: 13px;
+      color: #d5e6df;
+      margin-bottom: 12px;
+    }
+
+    .floor-title {
+      font-size: 13px;
+      color: #b6d2c5;
+      margin-bottom: 8px;
+    }
+
+    .floor-cards {
+      min-height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(0,0,0,0.15);
+    }
+
+    /* =========================================================
+       화투 카드
+       ========================================================= */
+
+    .card {
+      position: relative;
+      width: 70px;
+      height: 104px;
+      border-radius: 7px;
+      background: linear-gradient(145deg, #fffef8, #eee8d7);
+      color: #111;
+      border: 2px solid #d2c7ad;
+      box-shadow:
+        0 4px 8px rgba(0,0,0,0.35),
+        inset 0 0 0 1px rgba(0,0,0,0.08);
+
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+    }
+
+    .card-month {
+      position: absolute;
+      top: 4px;
+      left: 5px;
+      font-size: 11px;
+      font-weight: 900;
+      color: #333;
+    }
+
+    .card-symbol {
+      position: absolute;
+      left: 50%;
+      top: 51%;
+      transform: translate(-50%, -50%);
+      font-size: 30px;
+    }
+
+    .card-type {
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 9px;
+      font-weight: 800;
+      color: #444;
+    }
+
+    .card.gwang {
+      background: linear-gradient(145deg, #fff9d8, #f2e3a7);
+    }
+
+    .card.yeol {
+      background: linear-gradient(145deg, #ffe6d9, #efc2ad);
+    }
+
+    .card.tti {
+      background: linear-gradient(145deg, #e5f2ff, #c5dff1);
+    }
+
+    .card.ssangpi {
+      background: linear-gradient(145deg, #fff1d2, #f2d09b);
+    }
+
+    .card.pi {
+      background: linear-gradient(145deg, #f5f5f5, #dcdcdc);
+    }
+
+    /* =========================================================
+       내 패
+       ========================================================= */
+
+    .my-hand-panel {
+      width: min(1200px, 100%);
+      margin: 15px auto 0;
+      padding: 14px 15px 18px;
+      border-radius: 18px;
+      background: #0b251b;
+      border: 1px solid rgba(255,255,255,0.09);
+    }
+
+    .hand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .hand-title {
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .hand-help {
+      font-size: 12px;
+      color: #92aaa0;
+    }
+
+    .hand-cards {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .hand-card {
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .hand-card.selected {
+      transform: translateY(-15px);
+      box-shadow:
+        0 0 0 3px #ffd95a,
+        0 12px 25px rgba(0,0,0,0.45);
+    }
+
+    .hand-card.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* =========================================================
+       액션 버튼
+       ========================================================= */
+
+    .action-panel {
+      width: min(720px, calc(100% - 30px));
+      margin: 15px auto;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      min-width: 130px;
+      height: 48px;
+      border: 0;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+
+    .action-btn:active {
+      transform: scale(0.97);
+    }
+
+    .action-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .play-btn {
+      background: #267cc4;
+    }
+
+    .go-btn {
+      background: #d79024;
+    }
+
+    .stop-btn {
+      background: #bd3d4c;
+    }
+
+    .die-btn {
+      background: #555d60;
+    }
+
+    .ready-btn {
+      background: #287e56;
+    }
+
+    /* =========================================================
+       팔이 패널
+       ========================================================= */
+
+    .selling-panel {
+      display: none;
+      width: min(720px, calc(100% - 30px));
+      margin: 15px auto;
+      padding: 18px;
+      border-radius: 18px;
+      background: #432d1f;
+      border: 1px solid #b77948;
+      text-align: center;
+    }
+
+    .selling-panel.active {
+      display: block;
+    }
+
+    .selling-title {
+      font-size: 19px;
+      font-weight: 900;
+      color: #ffd19b;
+    }
+
+    .selling-desc {
+      margin: 7px 0 15px;
+      color: #e7cbb5;
+      font-size: 13px;
+    }
+
+    .selling-cards {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .sell-card {
+      cursor: pointer;
+      position: relative;
+    }
+
+    .sell-price {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #d78b4d;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .sell-done-btn {
+      margin-top: 18px;
+      padding: 11px 25px;
+      border: 0;
+      border-radius: 10px;
+      background: #76533b;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* =========================================================
+       하단 정보
+       ========================================================= */
+
+    .bottom-section {
+      width: min(1200px, calc(100% - 30px));
+      margin: 15px auto 30px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .info-panel {
+      padding: 17px;
+      border-radius: 18px;
+      background: #0b251b;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .info-title {
+      font-weight: 800;
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+
+    .score-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .score-table th,
+    .score-table td {
+      padding: 8px 5px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      text-align: center;
+    }
+
+    .score-table th {
+      color: #8ea99e;
+      font-weight: 600;
+    }
+
+    .score-table td:first-child,
+    .score-table th:first-child {
+      text-align: left;
+    }
+
+    .log-box {
+      height: 190px;
+      overflow-y: auto;
+      padding-right: 5px;
+      font-size: 12px;
+      color: #a9bbb4;
+      line-height: 1.65;
+    }
+
+    .log-item {
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      padding: 2px 0;
+    }
+
+    /* =========================================================
+       알림
+       ========================================================= */
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 25px;
+      transform: translate(-50%, 100px);
+      padding: 12px 20px;
+      border-radius: 12px;
+      background: rgba(20,20,20,0.92);
+      color: white;
+      font-size: 14px;
+      z-index: 9999;
+      transition: transform 0.25s;
+      pointer-events: none;
+      max-width: calc(100% - 30px);
+      text-align: center;
+    }
+
+    #toast.show {
+      transform: translate(-50%, 0);
+    }
+
+    /* =========================================================
+       모바일
+       ========================================================= */
+
+    @media (max-width: 850px) {
+      .game-table {
+        min-height: 570px;
+        border-width: 6px;
+        border-radius: 20px;
+      }
+
+      .player-seat {
+        width: 145px;
+        min-height: 85px;
+        padding: 8px;
+      }
+
+      .player-name {
+        font-size: 13px;
+      }
+
+      .player-balance {
+        font-size: 15px;
+      }
+
+      .player-info {
+        font-size: 10px;
+      }
+
+      .player-position-0 {
+        top: 8px;
+      }
+
+      .player-position-1 {
+        right: 7px;
+      }
+
+      .player-position-2 {
+        bottom: 8px;
+      }
+
+      .player-position-3 {
+        left: 7px;
+      }
+
+      .center-area {
+        width: 48%;
+      }
+
+      .card {
+        width: 55px;
+        height: 82px;
+      }
+
+      .card-symbol {
+        font-size: 24px;
+      }
+
+      .card-month {
+        font-size: 9px;
+      }
+
+      .card-type {
+        font-size: 7px;
+      }
+
+      .floor-cards {
+        min-height: 120px;
+        gap: 4px;
+      }
+
+      .bottom-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .top-bar {
+        height: 52px;
+        padding: 0 12px;
+      }
+
+      .brand {
+        font-size: 16px;
+      }
+
+      .game-status {
+        font-size: 11px;
+      }
+
+      .table-wrapper {
+        padding: 7px;
+      }
+
+      .game-table {
+        min-height: 470px;
+      }
+
+      .player-seat {
+        width: 120px;
+        min-height: 72px;
+      }
+
+      .player-balance {
+        font-size: 13px;
+      }
+
+      .player-name {
+        font-size: 11px;
+      }
+
+      .player-info {
+        font-size: 8px;
+      }
+
+      .turn-label {
+        font-size: 8px;
+      }
+
+      .center-area {
+        width: 45%;
+      }
+
+      .floor-cards {
+        min-height: 100px;
+      }
+
+      .card {
+        width: 42px;
+        height: 63px;
+        border-width: 1px;
+      }
+
+      .card-symbol {
+        font-size: 18px;
+      }
+
+      .card-month {
+        font-size: 7px;
+        top: 2px;
+        left: 3px;
+      }
+
+      .card-type {
+        font-size: 5px;
+        bottom: 2px;
+      }
+
+      .my-hand-panel {
+        margin-top: 7px;
+        padding: 10px;
+      }
+
+      .hand-help {
+        display: none;
+      }
+
+      .hand-cards {
+        gap: 3px;
+      }
+
+      .hand-card {
+        width: 47px;
+        height: 70px;
+      }
+
+      .hand-card .card-symbol {
+        font-size: 20px;
+      }
+
+      .action-panel {
+        width: calc(100% - 14px);
+        margin: 8px auto;
+        gap: 5px;
+      }
+
+      .action-btn {
+        min-width: calc(50% - 5px);
+        height: 43px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     입장 화면
+     ========================================================= -->
+
+<div id="loginScreen">
+
+  <div class="login-card">
+
+    <div class="logo">🎴</div>
+
+    <h1>4인 고스톱</h1>
+
+    <p>
+      친구들과 함께 즐기는 온라인 고스톱
+    </p>
+
+    <input
+      id="nameInput"
+      class="name-input"
+      maxlength="10"
+      placeholder="닉네임을 입력하세요"
+      autocomplete="off"
+    />
+
+    <button
+      id="joinBtn"
+      class="primary-btn"
+      onclick="joinGame()"
+    >
+      게임 참가
+    </button>
+
+    <div
+      id="loginMessage"
+      style="
+        margin-top:15px;
+        font-size:13px;
+        color:#a9bdb4;
+      "
+    ></div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     게임 화면
+     ========================================================= -->
+
+<div id="gameScreen">
+
+  <div class="top-bar">
+
+    <div class="brand">
+      🎴 고스톱
+    </div>
+
+    <div class="game-status">
+
+      <span class="status-dot"></span>
+
+      <span id="phaseText">
+        대기 중
+      </span>
+
+      <span
+        id="roundText"
+        class="round-badge"
+      >
+        0라운드
+      </span>
+
+    </div>
+
+  </div>
+
+
+  <div class="table-wrapper">
+
+    <div class="game-table">
+
+      <!-- PLAYER 1 -->
+      <div
+        id="playerSeat0"
+        class="player-seat player-position-0"
+      ></div>
+
+      <!-- PLAYER 2 -->
+      <div
+        id="playerSeat1"
+        class="player-seat player-position-1"
+      ></div>
+
+      <!-- PLAYER 3 -->
+      <div
+        id="playerSeat2"
+        class="player-seat player-position-2"
+      ></div>
+
+      <!-- PLAYER 4 -->
+      <div
+        id="playerSeat3"
+        class="player-seat player-position-3"
+      ></div>
+
+
+      <!-- 중앙 -->
+      <div class="center-area">
+
+        <div
+          id="phaseLabel"
+          class="phase-label"
+        >
+          4명이 모이면 게임이 시작됩니다.
+        </div>
+
+        <div class="floor-title">
+          바닥패
+        </div>
+
+        <div
+          id="floorCards"
+          class="floor-cards"
+        >
+          <span
+            style="
+              color:#8eb5a3;
+              font-size:13px;
+            "
+          >
+            아직 카드가 없습니다.
+          </span>
+        </div>
+
+        <div
+          style="
+            margin-top:10px;
+            color:#9fc0b3;
+            font-size:11px;
+          "
+        >
+          남은 덱:
+          <span id="deckCount">0</span>장
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =======================================================
+       내 패
+       ======================================================= -->
+
+  <div class="my-hand-panel">
+
+    <div class="hand-header">
+
+      <div class="hand-title">
+        🃏 내 패
+      </div>
+
+      <div class="hand-help">
+        카드를 선택한 후 "카드 내기"를 누르세요.
+      </div>
+
+    </div>
+
+    <div
+      id="myHand"
+      class="hand-cards"
+    >
+      <span style="color:#819a90;">
+        게임 시작을 기다리는 중...
+      </span>
+    </div>
+
+  </div>
+
+
+  <!-- =======================================================
+       팔이
+       ======================================================= -->
+
+  <div
+    id="sellingPanel"
+    class="selling-panel"
+  >
+
+    <div class="selling-title">
+      💰 광 / 쌍피 팔이
+    </div>
+
+    <div class="selling-desc">
+
+      마지막 생존자는 광 또는 쌍피를
+      <strong>장당 500원</strong>에 판매할 수 있습니다.<br />
+
+      선을 제외한 다른 플레이어가 각각 500원을 지불합니다.
+
+    </div>
+
+    <div
+      id="sellingCards"
+      class="selling-cards"
+    ></div>
+
+    <button
+      class="sell-done-btn"
+      onclick="finishSelling()"
+    >
+      팔이 완료
+    </button>
+
+  </div>
+
+
+  <!-- =======================================================
+       액션 버튼
+       ======================================================= -->
+
+  <div class="action-panel">
+
+    <button
+      id="playBtn"
+      class="action-btn play-btn"
+      onclick="playSelectedCard()"
+      disabled
+    >
+      🃏 카드 내기
+    </button>
+
+    <button
+      id="goBtn"
+      class="action-btn go-btn"
+      onclick="gameAction('go')"
+      disabled
+    >
+      GO
+    </button>
+
+    <button
+      id="stopBtn"
+      class="action-btn stop-btn"
+      onclick="gameAction('stop')"
+      disabled
+    >
+      STOP
+    </button>
+
+    <button
+      id="dieBtn"
+      class="action-btn die-btn"
+      onclick="gameAction('die')"
+      disabled
+    >
+      죽기
+    </button>
+
+    <button
+      id="readyBtn"
+      class="action-btn ready-btn"
+      onclick="readyGame()"
+      style="display:none;"
+    >
+      준비 완료
+    </button>
+
+  </div>
+
+
+  <!-- =======================================================
+       정보
+       ======================================================= -->
+
+  <div class="bottom-section">
+
+    <!-- 점수 / 잔액 -->
+    <div class="info-panel">
+
+      <div class="info-title">
+        💰 현재 정산
+      </div>
+
+      <table class="score-table">
+
+        <thead>
+
+          <tr>
+            <th>플레이어</th>
+            <th>점수</th>
+            <th>상태</th>
+            <th>누적금액</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="scoreTableBody">
+        </tbody>
+
+      </table>
+
+    </div>
+
+
+    <!-- 로그 -->
+    <div class="info-panel">
+
+      <div class="info-title">
+        📜 게임 로그
+      </div>
+
+      <div
+        id="logBox"
+        class="log-box"
+      ></div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     토스트
+     ========================================================= -->
+
+<div id="toast"></div>
+
+
+<script>
+
+/* ============================================================
+   기본 설정
+   ============================================================ */
+
+const API_BASE = "https://gostop-server-eseq.onrender.com";
+
+let myPlayerId =
+  localStorage.getItem("gostopPlayerId") || "";
+
+let myPlayerName =
+  localStorage.getItem("gostopPlayerName") || "";
+
+let selectedCardId = null;
+
+let latestState = null;
+
+let latestHand = [];
+
+let pollingTimer = null;
+
+
+/* ============================================================
+   카드 아이콘
+   ============================================================ */
+
+function cardSymbol(card) {
+
+  if (!card) return "🃏";
+
+  switch (card.type) {
+
+    case "gwang":
+      return "🌞";
+
+    case "yeol":
+      return "🦋";
+
+    case "tti":
+      return "🎗️";
+
+    case "ssangpi":
+      return card.isOrchidAnimal
+        ? "🌺"
+        : "💠";
+
+    case "pi":
+      return "🍃";
+
+    default:
+      return "🃏";
+  }
+}
+
+
+function cardTypeName(type) {
+
+  switch (type) {
+
+    case "gwang":
+      return "광";
+
+    case "yeol":
+      return "열";
+
+    case "tti":
+      return "띠";
+
+    case "ssangpi":
+      return "쌍피";
+
+    case "pi":
+      return "피";
+
+    default:
+      return "";
+  }
+}
+
+
+/* ============================================================
+   카드 HTML
+   ============================================================ */
+
+function createCardHTML(card, options = {}) {
+
+  const selected =
+    options.selected
+      ? " selected"
+      : "";
+
+  const clickable =
+    options.clickable
+      ? " hand-card"
+      : "";
+
+  const extraClass =
+    options.extraClass || "";
+
+  return `
+    <div
+      class="card ${card.type}${clickable}${selected} ${extraClass}"
+      data-card-id="${escapeHtml(card.id)}"
+      ${options.onclick || ""}
+    >
+
+      <div class="card-month">
+        ${card.month}월
+      </div>
+
+      <div class="card-symbol">
+        ${cardSymbol(card)}
+      </div>
+
+      <div class="card-type">
+        ${cardTypeName(card.type)}
+      </div>
+
+    </div>
+  `;
+}
+
+
+/* ============================================================
+   HTML Escape
+   ============================================================ */
+
+function escapeHtml(value) {
+
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+
+/* ============================================================
+   입장
+   ============================================================ */
+
+async function joinGame() {
+
+  const input =
+    document.getElementById("nameInput");
+
+  const name =
+    input.value.trim();
+
+  if (!name) {
+
+    showToast("닉네임을 입력하세요.");
+
+    input.focus();
+
+    return;
+  }
+
+  const button =
+    document.getElementById("joinBtn");
+
+  button.disabled = true;
+
+  try {
+
+    const response =
+      await fetch(
+        API_BASE + "/join",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              name
+            })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error ||
+        "게임 참가에 실패했습니다."
+      );
+
+    }
+
+    myPlayerId = data.playerId;
+    myPlayerName = data.name;
+
+    localStorage.setItem(
+      "gostopPlayerId",
+      myPlayerId
+    );
+
+    localStorage.setItem(
+      "gostopPlayerName",
+      myPlayerName
+    );
+
+    document.getElementById(
+      "loginScreen"
+    ).style.display = "none";
+
+    document.getElementById(
+      "gameScreen"
+    ).style.display = "block";
+
+    startPolling();
+
+    showToast(
+      `${myPlayerName}님이 게임에 참가했습니다.`
+    );
+
+  } catch (error) {
+
+    button.disabled = false;
+
+    showToast(
+      error.message ||
+      "서버 연결에 실패했습니다."
+    );
+  }
+}
+
+
+/* ============================================================
+   준비
+   ============================================================ */
+
+async function readyGame() {
+
+  if (!myPlayerId) return;
+
+  try {
+
+    const response =
+      await fetch(
+        API_BASE + "/ready",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              playerId: myPlayerId
+            })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error ||
+        "준비 처리 실패"
+      );
+
+    }
+
+    showToast("준비 완료!");
+
+    await refreshState();
+
+  } catch (error) {
+
+    showToast(
+      error.message ||
+      "준비 처리 중 오류가 발생했습니다."
+    );
+  }
+}
+
+
+/* ============================================================
+   게임 상태 폴링
+   ============================================================ */
+
+function startPolling() {
+
+  if (pollingTimer) {
+    clearInterval(pollingTimer);
+  }
+
+  refreshState();
+
+  pollingTimer =
+    setInterval(
+      refreshState,
+      700
+    );
+}
+
+
+async function refreshState() {
+
+  try {
+
+    const response =
+      await fetch(
+        API_BASE + "/state",
+        {
+          cache: "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const state =
+      await response.json();
+
+    latestState = state;
+
+    renderState(state);
+
+    if (myPlayerId) {
+      await refreshHand();
+    }
+
+  } catch (error) {
+
+    console.warn(
+      "state polling error",
+      error
+    );
+  }
+}
+
+
+/* ============================================================
+   내 패 가져오기
+   ============================================================ */
+
+async function refreshHand() {
+
+  try {
+
+    const response =
+      await fetch(
+        API_BASE +
+        "/hand/" +
+        encodeURIComponent(myPlayerId),
+        {
+          cache: "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data =
+      await response.json();
+
+    latestHand =
+      Array.isArray(data.hand)
+        ? data.hand
+        : [];
+
+    renderHand();
+
+  } catch (error) {
+
+    console.warn(
+      "hand polling error",
+      error
+    );
+  }
+}
+
+
+/* ============================================================
+   전체 상태 렌더링
+   ============================================================ */
+
+function renderState(state) {
+
+  renderTopBar(state);
+
+  renderPlayers(state);
+
+  renderFloor(state);
+
+  renderScoreTable(state);
+
+  renderLog(state);
+
+  renderSelling(state);
+
+  renderButtons(state);
+
+  renderPhaseLabel(state);
+}
+
+
+/* ============================================================
+   상단
+   ============================================================ */
+
+function renderTopBar(state) {
+
+  const phaseMap = {
+
+    waiting: "대기 중",
+
+    ordering: "순서 결정",
+
+    playing: "게임 진행 중",
+
+    selling: "팔이 진행 중",
+
+    roundEnd: "라운드 종료",
+
+    gameEnd: "게임 종료"
+  };
+
+  document.getElementById(
+    "phaseText"
+  ).textContent =
+    phaseMap[state.phase] ||
+    state.phase;
+
+  document.getElementById(
+    "roundText"
+  ).textContent =
+    `${state.roundNumber || 0}라운드`;
+}
+
+
+/* ============================================================
+   플레이어
+   ============================================================ */
+
+function renderPlayers(state) {
+
+  const players =
+    Array.isArray(state.players)
+      ? state.players
+      : [];
+
+  for (let i = 0; i < 4; i++) {
+
+    const element =
+      document.getElementById(
+        `playerSeat${i}`
+      );
+
+    const player =
+      players[i];
+
+    if (!player) {
+
+      element.innerHTML = `
+        <div
+          style="
+            text-align:center;
+            color:#728d81;
+            padding-top:28px;
+            font-size:12px;
+          "
+        >
+          빈 자리
+        </div>
+      `;
+
+      element.className =
+        `player-seat player-position-${i}`;
+
+      continue;
+    }
+
+    const isCurrent =
+      state.currentPlayer ===
+      player.name;
+
+    const isSeller =
+      state.sellerPlayerId ===
+      player.id;
+
+    const classes = [
+      "player-seat",
+      `player-position-${i}`
+    ];
+
+    if (isCurrent) {
+      classes.push("current-turn");
+    }
+
+    if (player.status === "dead") {
+      classes.push("dead");
+    }
+
+    if (isSeller) {
+      classes.push("seller");
+    }
+
+    element.className =
+      classes.join(" ");
+
+    const balanceClass =
+      player.balance > 0
+        ? "positive"
+        : player.balance < 0
+          ? "negative"
+          : "zero";
+
+    const balanceText =
+      player.balance >= 0
+        ? "+" +
+          Number(
+            player.balance
+          ).toLocaleString()
+        : Number(
+            player.balance
+          ).toLocaleString();
+
+    let statusText = "대기";
+
+    if (player.status === "playing") {
+      statusText = "참여";
+    }
+
+    if (player.status === "dead") {
+      statusText = "죽음";
+    }
+
+    if (player.status === "spectating") {
+      statusText = "관전";
+    }
+
+    element.innerHTML = `
+
+      <div class="player-top">
+
+        <div class="player-name">
+          ${escapeHtml(player.name)}
+          ${
+            player.id === myPlayerId
+              ? " <span style='color:#78dca9'>(나)</span>"
+              : ""
+          }
+        </div>
+
+        <div class="turn-label">
+          현재 턴
+        </div>
+
+      </div>
+
+      <div class="player-balance ${balanceClass}">
+        ${balanceText}원
+      </div>
+
+      <div class="player-info">
+
+        <span>
+          ${statusText}
+        </span>
+
+        <span>
+          점수 ${player.score}점
+        </span>
+
+        <span>
+          패 ${player.handCount}
+        </span>
+
+      </div>
+
+      ${
+        isSeller
+          ? `
+            <div
+              style="
+                margin-top:6px;
+                color:#ffb778;
+                font-size:11px;
+                font-weight:700;
+              "
+            >
+              💰 팔이 대상
+            </div>
+          `
+          : ""
+      }
+
+    `;
+  }
+}
+
+
+/* ============================================================
+   바닥패
+   ============================================================ */
+
+function renderFloor(state) {
+
+  const container =
+    document.getElementById(
+      "floorCards"
+    );
+
+  const cards =
+    Array.isArray(state.floorCards)
+      ? state.floorCards
+      : [];
+
+  if (!cards.length) {
+
+    container.innerHTML = `
+      <span
+        style="
+          color:#8eb5a3;
+          font-size:13px;
+        "
+      >
+        바닥패 없음
+      </span>
+    `;
+
+  } else {
+
+    container.innerHTML =
+      cards
+        .map(card =>
+          createCardHTML(card)
+        )
+        .join("");
+  }
+
+  document.getElementById(
+    "deckCount"
+  ).textContent =
+    state.deckRemaining ?? 0;
+}
+
+
+/* ============================================================
+   내 패
+   ============================================================ */
+
+function renderHand() {
+
+  const container =
+    document.getElementById(
+      "myHand"
+    );
+
+  if (!myPlayerId) {
+
+    container.innerHTML =
+      "<span>게임 참가 후 패가 표시됩니다.</span>";
+
+    return;
+  }
+
+  if (!latestHand.length) {
+
+    container.innerHTML = `
+      <span
+        style="
+          color:#819a90;
+          font-size:13px;
+        "
+      >
+        현재 가지고 있는 패가 없습니다.
+      </span>
+    `;
+
+    selectedCardId = null;
+
+    updatePlayButton();
+
+    return;
+  }
+
+  container.innerHTML =
+    latestHand
+      .map(card => {
+
+        const selected =
+          selectedCardId ===
+          card.id;
+
+        return createCardHTML(
+          card,
+          {
+            selected,
+            clickable: true,
+            onclick:
+              `onclick="selectCard('${escapeHtml(card.id)}')"`
+          }
+        );
+
+      })
+      .join("");
+}
+
+
+/* ============================================================
+   카드 선택
+   ============================================================ */
+
+function selectCard(cardId) {
+
+  if (
+    latestState &&
+    latestState.phase !== "playing"
+  ) {
+    return;
+  }
+
+  selectedCardId =
+    selectedCardId === cardId
+      ? null
+      : cardId;
+
+  renderHand();
+
+  updatePlayButton();
+}
+
+
+function updatePlayButton() {
+
+  const button =
+    document.getElementById(
+      "playBtn"
+    );
+
+  const isMyTurn =
+    latestState &&
+    latestState.currentPlayer &&
+    latestState.players.some(
+      p =>
+        p.id === myPlayerId &&
+        p.name === latestState.currentPlayer
+    );
+
+  button.disabled =
+    !selectedCardId ||
+    !isMyTurn ||
+    latestState?.phase !== "playing";
+}
+
+
+/* ============================================================
+   카드 내기
+   ============================================================ */
+
+async function playSelectedCard() {
+
+  if (!selectedCardId) {
+
+    showToast("카드를 선택하세요.");
+
+    return;
+  }
+
+  if (!latestState) {
+    return;
+  }
+
+  const current =
+    latestState.players.find(
+      p => p.id === myPlayerId
+    );
+
+  if (
+    !current ||
+    latestState.currentPlayer !==
+      current.name
+  ) {
+
+    showToast(
+      "현재 내 턴이 아닙니다."
+    );
+
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        API_BASE + "/play",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              playerId:
+                myPlayerId,
+
+              cardId:
+                selectedCardId
+            })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (data.result !== "ok") {
+
+      showToast(
+        data.result ||
+        "카드를 낼 수 없습니다."
+      );
+
+      return;
+    }
+
+    selectedCardId = null;
+
+    await refreshState();
+
+  } catch (error) {
+
+    showToast(
+      "카드 내기 중 오류가 발생했습니다."
+    );
+  }
+}
+
+
+/* ============================================================
+   고 / 스톱 / 죽기
+   ============================================================ */
+
+async function gameAction(action) {
+
+  if (!latestState) return;
+
+  const current =
+    latestState.players.find(
+      p => p.id === myPlayerId
+    );
+
+  if (!current) {
+    return;
+  }
+
+  if (
+    latestState.currentPlayer !==
+    current.name
+  ) {
+
+    showToast(
+      "현재 내 턴이 아닙니다."
+    );
+
+    return;
+  }
+
+  if (action === "die") {
+
+    const ok =
+      confirm(
+        "정말 죽기를 선택하시겠습니까?"
+      );
+
+    if (!ok) {
+      return;
+    }
+  }
+
+  if (action === "stop") {
+
+    const ok =
+      confirm(
+        "스톱하고 이번 판을 종료하시겠습니까?"
+      );
+
+    if (!ok) {
+      return;
+    }
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        API_BASE + "/action",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              playerId:
+                myPlayerId,
+
+              action
+            })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (data.result !== "ok") {
+
+      showToast(
+        data.result ||
+        "처리할 수 없습니다."
+      );
+
+      return;
+    }
+
+    await refreshState();
+
+  } catch (error) {
+
+    showToast(
+      "게임 처리 중 오류가 발생했습니다."
+    );
+  }
+}
+
+
+/* ============================================================
+   버튼 상태
+   ============================================================ */
+
+function renderButtons(state) {
+
+  const readyBtn =
+    document.getElementById(
+      "readyBtn"
+    );
+
+  const players =
+    state.players || [];
+
+  const me =
+    players.find(
+      p => p.id === myPlayerId
+    );
+
+  /* 대기 상태 */
+
+  if (state.phase === "waiting") {
+
+    readyBtn.style.display =
+      "inline-block";
+
+    readyBtn.disabled =
+      !me || me.isReady;
+
+    if (me && me.isReady) {
+      readyBtn.textContent =
+        "준비 완료 ✓";
+    } else {
+      readyBtn.textContent =
+        "준비 완료";
+    }
+
+  } else {
+
+    readyBtn.style.display =
+      "none";
+  }
+
+
+  /* 게임 액션 */
+
+  const isMyTurn =
+    me &&
+    state.currentPlayer ===
+      me.name &&
+    state.phase === "playing";
+
+
+  document.getElementById(
+    "goBtn"
+  ).disabled =
+    !isMyTurn;
+
+  document.getElementById(
+    "stopBtn"
+  ).disabled =
+    !isMyTurn;
+
+  document.getElementById(
+    "dieBtn"
+  ).disabled =
+    !isMyTurn;
+
+  updatePlayButton();
+}
+
+
+/* ============================================================
+   팔이
+   ============================================================ */
+
+function renderSelling(state) {
+
+  const panel =
+    document.getElementById(
+      "sellingPanel"
+    );
+
+  if (
+    state.phase !== "selling" ||
+    state.sellerPlayerId !==
+      myPlayerId
+  ) {
+
+    panel.classList.remove(
+      "active"
+    );
+
+    return;
+  }
+
+  panel.classList.add(
+    "active"
+  );
+
+  const container =
+    document.getElementById(
+      "sellingCards"
+    );
+
+  const queue =
+    Array.isArray(state.sellQueue)
+      ? state.sellQueue
+      : [];
+
+  if (!queue.length) {
+
+    container.innerHTML = `
+      <div
+        style="
+          color:#d7bda8;
+          font-size:13px;
+        "
+      >
+        판매 가능한 광/쌍피가 없습니다.
+      </div>
+    `;
+
+    return;
+  }
+
+  container.innerHTML =
+    queue
+      .map(item => {
+
+        return `
+          <div
+            class="sell-card"
+            onclick="sellCard('${escapeHtml(item.card.id)}')"
+          >
+
+            ${createCardHTML(
+              item.card
+            )}
+
+            <div class="sell-price">
+              +${Number(
+                item.pricePerItem
+              ).toLocaleString()}원
+            </div>
+
+          </div>
+        `;
+
+      })
+      .join("");
+}
+
+
+/* ============================================================
+   팔이 실행
+   ============================================================ */
+
+async function sellCard(cardId) {
+
+  try {
+
+    const response =
+      await fetch(
+        API_BASE + "/sell",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              playerId:
+                myPlayerId,
+
+              cardId
+            })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (data.result !== "ok") {
+
+      showToast(
+        data.result ||
+        "팔 수 없습니다."
+      );
+
+      return;
+    }
+
+    showToast(
+      "카드를 500원에 판매했습니다."
+    );
+
+    await refreshState();
+
+  } catch (error) {
+
+    showToast(
+      "팔이 처리 중 오류가 발생했습니다."
+    );
+  }
+}
+
+
+/* ============================================================
+   팔이 완료
+   ============================================================ */
+
+async function finishSelling() {
+
+  try {
+
+    await fetch(
+      API_BASE + "/sell/done",
+      {
+        method: "POST"
+      }
+    );
+
+    await refreshState();
+
+  } catch (error) {
+
+    showToast(
+      "팔이 종료 처리에 실패했습니다."
+    );
+  }
+}
+
+
+/* ============================================================
+   점수표
+   ============================================================ */
+
+function renderScoreTable(state) {
+
+  const tbody =
+    document.getElementById(
+      "scoreTableBody"
+    );
+
+  const players =
+    state.players || [];
+
+  tbody.innerHTML =
+    players
+      .map(player => {
+
+        const balance =
+          Number(
+            player.balance || 0
+          );
+
+        const balanceClass =
+          balance > 0
+            ? "positive"
+            : balance < 0
+              ? "negative"
+              : "zero";
+
+        const balanceText =
+          balance >= 0
+            ? "+" +
+              balance.toLocaleString()
+            : balance.toLocaleString();
+
+        let status =
+          "대기";
+
+        if (
+          player.status ===
+          "playing"
+        ) {
+          status = "참여";
+        }
+
+        if (
+          player.status ===
+          "dead"
+        ) {
+          status = "죽음";
+        }
+
+        if (
+          player.status ===
+          "spectating"
+        ) {
+          status = "관전";
+        }
+
+        return `
+          <tr>
+
+            <td>
+              ${escapeHtml(player.name)}
+              ${
+                player.id ===
+                myPlayerId
+                  ? " <span style='color:#6fe0a7'>(나)</span>"
+                  : ""
+              }
+            </td>
+
+            <td>
+              ${player.score}점
+            </td>
+
+            <td>
+              ${status}
+            </td>
+
+            <td class="${balanceClass}">
+              ${balanceText}원
+            </td>
+
+          </tr>
+        `;
+
+      })
+      .join("");
+}
+
+
+/* ============================================================
+   로그
+   ============================================================ */
+
+function renderLog(state) {
+
+  const box =
+    document.getElementById(
+      "logBox"
+    );
+
+  const logs =
+    Array.isArray(state.log)
+      ? state.log
+      : [];
+
+  box.innerHTML =
+    logs
+      .map(log => `
+        <div class="log-item">
+          ${escapeHtml(log)}
+        </div>
+      `)
+      .join("");
+
+  box.scrollTop =
+    box.scrollHeight;
+}
+
+
+/* ============================================================
+   중앙 상태 문구
+   ============================================================ */
+
+function renderPhaseLabel(state) {
+
+  const label =
+    document.getElementById(
+      "phaseLabel"
+    );
+
+  if (
+    state.phase === "waiting"
+  ) {
+
+    const count =
+      state.players
+        ? state.players.length
+        : 0;
+
+    if (count < 4) {
+
+      label.textContent =
+        `플레이어 입장 대기 중 (${count}/4)`;
+
+    } else {
+
+      const readyCount =
+        state.players.filter(
+          p => p.isReady
+        ).length;
+
+      label.textContent =
+        `모두 준비해주세요 (${readyCount}/4)`;
+    }
+
+    return;
+  }
+
+  if (
+    state.phase === "playing"
+  ) {
+
+    label.textContent =
+      state.currentPlayer
+        ? `현재 선: ${state.currentPlayer}`
+        : "게임 진행 중";
+
+    return;
+  }
+
+  if (
+    state.phase === "selling"
+  ) {
+
+    const seller =
+      state.players?.find(
+        p =>
+          p.id ===
+          state.sellerPlayerId
+      );
+
+    label.textContent =
+      seller
+        ? `${seller.name}님이 광/쌍피 팔이 중`
+        : "팔이 진행 중";
+
+    return;
+  }
+
+  if (
+    state.phase === "roundEnd"
+  ) {
+
+    label.textContent =
+      "라운드 종료";
+
+    return;
+  }
+
+  label.textContent =
+    "게임 대기 중";
+}
+
+
+/* ============================================================
+   토스트
+   ============================================================ */
+
+let toastTimer = null;
+
+function showToast(message) {
+
+  const toast =
+    document.getElementById(
+      "toast"
+    );
+
+  toast.textContent =
+    message;
+
+  toast.classList.add(
+    "show"
+  );
+
+  clearTimeout(
+    toastTimer
+  );
+
+  toastTimer =
+    setTimeout(
+      () => {
+        toast.classList.remove(
+          "show"
+        );
+      },
+      2200
+    );
+}
+
+
+/* ============================================================
+   Enter 키
+   ============================================================ */
+
+document
+  .getElementById("nameInput")
+  .addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter"
+      ) {
+
+        joinGame();
+
+      }
+
+    }
+  );
+
+
+/* ============================================================
+   이미 로그인한 플레이어
+   ============================================================ */
+
+if (
+  myPlayerId &&
+  myPlayerName
+) {
+
+  /*
+   * 이전 세션의 playerId가 서버에
+   * 아직 존재하는지 확인합니다.
+   */
+
+  fetch(
+    API_BASE + "/state",
+    {
+      cache: "no-store"
+    }
+  )
+    .then(response =>
+      response.json()
+    )
+    .then(state => {
+
+      const exists =
+        state.players?.some(
+          p =>
+            p.id ===
+            myPlayerId
+        );
+
+      if (exists) {
+
+        document.getElementById(
+          "loginScreen"
+        ).style.display = "none";
+
+        document.getElementById(
+          "gameScreen"
+        ).style.display = "block";
+
+        startPolling();
+
+      }
+
+    })
+    .catch(() => {});
+
+}
+
+</script>
+
+</body>
+</html>
+```
