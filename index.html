@@ -1340,9 +1340,19 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function logoutGame() {
-  localStorage.removeItem("gostopPlayerId");
-  localStorage.removeItem("gostopPlayerName");
+async function logoutGame() {
+  try {
+    await fetch(API_BASE + "/leave", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playerId: myPlayerId })
+    });
+  } catch (error) {
+    console.warn("퇴장 처리 중 오류", error);
+  }
+
+  localstorage.removeItem("gostopPlayerId");
+  localstorage.removeItem("gostopPlayerName");
   location.reload();
 }
 
